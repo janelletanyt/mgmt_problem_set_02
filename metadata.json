@@ -1,0 +1,6 @@
+{
+  "name": "ResaleForecast",
+  "description": "An app for Singaporean HDB resale flat home owners to forecast property valuation over the next 1-10 years based on historical trends, predictive modeling, lease decay, and macro factors.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
