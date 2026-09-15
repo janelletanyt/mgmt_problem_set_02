@@ -34,14 +34,35 @@ export default async function handler(req, res) {
   // 2. Parse query parameters
   // Support town query (e.g. ?town=TAMPINES or parsed from address)
   const rawTown = typeof req.query.town === 'string' ? req.query.town.trim() : '';
-  const town = (rawTown || 'TAMPINES').toUpperCase();
+  const rawFlatType = typeof req.query.flat_type === 'string' ? req.query.flat_type.trim().toUpperCase() : '';
+  const rawStorey = typeof req.query.storey === 'string' ? req.query.storey.trim().toUpperCase() : '';
+
+  if (!rawTown) {
+    res.setHeader('Cache-Control', 's-maxage=86400, stale-while-revalidate=172800');
+    return res.status(200).json({
+      town: '',
+      flatType: rawFlatType || '',
+      storey: rawStorey || '',
+      sampleCount: 0,
+      isEmpty: true,
+      latestMedianPrice: 0,
+      historicalCAGR: 0,
+      latestMonth: null,
+      records: []
+    });
+  }
+  const town = rawTown.toUpperCase();
 
   // Page limit: sensible limit of 1000 for robust analysis
   const requestedLimit = parseInt(req.query.limit, 10);
   const limit = !isNaN(requestedLimit) && requestedLimit > 0 && requestedLimit <= 10000 ? requestedLimit : 1000;
 
-  // Build URL with encoded filter
-  const filtersParam = encodeURIComponent(JSON.stringify({ town }));
+  // Build URL with encoded filter (filter by town and flat_type if provided)
+  const filterObject = { town };
+  if (rawFlatType) {
+    filterObject.flat_type = rawFlatType;
+  }
+  const filtersParam = encodeURIComponent(JSON.stringify(filterObject));
   const upstreamUrl = `https://data.gov.sg/api/action/datastore_search?resource_id=${UPSTREAM_RESOURCE_ID}&filters=${filtersParam}&limit=${limit}`;
 
   // 3. Fetch upstream with error safety
@@ -92,6 +113,8 @@ export default async function handler(req, res) {
     res.setHeader('Cache-Control', 's-maxage=86400, stale-while-revalidate=172800');
     return res.status(200).json({
       town,
+      flatType: rawFlatType || 'ALL',
+      storey: rawStorey || '',
       sampleCount: 0,
       isEmpty: true,
       latestMedianPrice: 0,
@@ -150,6 +173,8 @@ export default async function handler(req, res) {
 
   return res.status(200).json({
     town,
+    flatType: rawFlatType || 'ALL',
+    storey: rawStorey || '',
     sampleCount: sortedRecords.length,
     isEmpty: false,
     latestMedianPrice,

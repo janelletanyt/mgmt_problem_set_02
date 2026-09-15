@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, Hash, Calendar, ArrowRight, Sparkles } from 'lucide-react';
+import { MapPin, Layers, Home, Calendar, ArrowRight, Sparkles } from 'lucide-react';
 import { FlatFormData } from '../types';
 
 interface Screen1FormProps {
@@ -7,37 +7,62 @@ interface Screen1FormProps {
   onSubmit: (data: FlatFormData) => void;
 }
 
+const FLAT_TYPES = [
+  { id: '2 ROOM', label: '2-Room', sub: '1 Bed' },
+  { id: '3 ROOM', label: '3-Room', sub: '2 Bed' },
+  { id: '4 ROOM', label: '4-Room', sub: '3 Bed' },
+  { id: '5 ROOM', label: '5-Room', sub: '3 Bed + Hall' },
+  { id: 'EXECUTIVE', label: 'Executive', sub: 'Maisonette' },
+];
+
+const STOREY_OPTIONS = [
+  { value: '01 TO 03', label: 'Storey 01 – 03 (Ground / Low Floor)' },
+  { value: '04 TO 06', label: 'Storey 04 – 06 (Low-Mid Floor)' },
+  { value: '07 TO 09', label: 'Storey 07 – 09 (Mid Floor)' },
+  { value: '10 TO 12', label: 'Storey 10 – 12 (High Floor)' },
+  { value: '13 TO 15', label: 'Storey 13 – 15 (High Floor)' },
+  { value: '16 TO 18', label: 'Storey 16 – 18 (Very High Floor)' },
+  { value: '19 TO 21', label: 'Storey 19 – 21 (Sky View)' },
+  { value: '22 TO 24', label: 'Storey 22 – 24 (Sky View)' },
+  { value: '25 TO 27', label: 'Storey 25 and Above' },
+];
+
 export const Screen1Form: React.FC<Screen1FormProps> = ({ initialData, onSubmit }) => {
   const [address, setAddress] = useState(initialData.address);
-  const [unitNumber, setUnitNumber] = useState(initialData.unitNumber);
+  const [storey, setStorey] = useState(initialData.storey || '07 TO 09');
+  const [flatType, setFlatType] = useState(initialData.flatType || '4 ROOM');
   const [forecastYears, setForecastYears] = useState(initialData.forecastYears || 5);
-  const [errors, setErrors] = useState<{ address?: string; unitNumber?: string }>({});
+  const [errors, setErrors] = useState<{ address?: string; storey?: string; flatType?: string }>({});
 
   const currentYear = new Date().getFullYear();
   const targetYear = currentYear + forecastYears;
 
   const quickSamples = [
-    { address: 'Blk 142 Lorong 2 Toa Payoh', unit: '#09-122', years: 5 },
-    { address: 'Blk 508 Bishan Street 11', unit: '#12-88', years: 3 },
-    { address: 'Blk 216 Tampines Street 23', unit: '#05-310', years: 7 },
+    { address: 'Blk 142 Lorong 2 Toa Payoh', flatType: '4 ROOM', storey: '07 TO 09', years: 5 },
+    { address: 'Blk 508 Bishan Street 11', flatType: '5 ROOM', storey: '10 TO 12', years: 3 },
+    { address: 'Blk 216 Tampines Street 23', flatType: '3 ROOM', storey: '04 TO 06', years: 7 },
   ];
 
-  const handleApplySample = (sample: { address: string; unit: string; years: number }) => {
+  const handleApplySample = (sample: { address: string; flatType: string; storey: string; years: number }) => {
     setAddress(sample.address);
-    setUnitNumber(sample.unit);
+    setFlatType(sample.flatType);
+    setStorey(sample.storey);
     setForecastYears(sample.years);
     setErrors({});
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const newErrors: { address?: string; unitNumber?: string } = {};
+    const newErrors: { address?: string; storey?: string; flatType?: string } = {};
 
     if (!address.trim()) {
       newErrors.address = 'Please enter your HDB flat address.';
     }
-    if (!unitNumber.trim()) {
-      newErrors.unitNumber = 'Please enter your unit number (e.g. #08-124).';
+    if (!storey.trim()) {
+      newErrors.storey = 'Please select your storey level.';
+    }
+    if (!flatType.trim()) {
+      newErrors.flatType = 'Please select your flat type.';
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -47,7 +72,8 @@ export const Screen1Form: React.FC<Screen1FormProps> = ({ initialData, onSubmit 
 
     onSubmit({
       address: address.trim(),
-      unitNumber: unitNumber.trim(),
+      storey: storey.trim(),
+      flatType: flatType.trim(),
       forecastYears,
     });
   };
@@ -64,7 +90,7 @@ export const Screen1Form: React.FC<Screen1FormProps> = ({ initialData, onSubmit 
           Find your HDB flat’s future valuation
         </h2>
         <p className="text-sm text-slate-600 leading-relaxed">
-          Enter your HDB flat address, unit number, and select a forecasting horizon between 1 and 10 years.
+          Enter your HDB flat address, select your storey and flat type (number of rooms), and choose a forecasting horizon between 1 and 10 years.
         </p>
       </div>
 
@@ -83,7 +109,7 @@ export const Screen1Form: React.FC<Screen1FormProps> = ({ initialData, onSubmit 
               onClick={() => handleApplySample(sample)}
               className="text-xs bg-white hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 text-slate-700 border border-slate-200 px-2.5 py-1.5 rounded-lg transition-colors text-left"
             >
-              {sample.address.split(' ')[2] || 'Estate'} ({sample.years}y)
+              {sample.address.split(' ')[2] || 'Estate'} ({sample.flatType.replace(' ROOM', 'R')}, {sample.storey.split(' ')[0]}, {sample.years}y)
             </button>
           ))}
         </div>
@@ -111,7 +137,7 @@ export const Screen1Form: React.FC<Screen1FormProps> = ({ initialData, onSubmit 
                 setAddress(e.target.value);
                 if (errors.address) setErrors((prev) => ({ ...prev, address: undefined }));
               }}
-              placeholder="e.g. Blk 123 Toa Payoh Lorong 1"
+              placeholder="e.g. Blk 142 Lorong 2 Toa Payoh"
               className={`w-full pl-9 pr-3 py-2.5 text-sm bg-white rounded-xl border transition-all outline-hidden ${
                 errors.address
                   ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-200'
@@ -128,39 +154,83 @@ export const Screen1Form: React.FC<Screen1FormProps> = ({ initialData, onSubmit 
           )}
         </div>
 
-        {/* Unit Number */}
+        {/* Flat Type (Number of Rooms) */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700">
+              Flat Type (Number of Rooms) <span className="text-rose-600">*</span>
+            </label>
+            <span className="text-[11px] text-rose-700 font-semibold bg-rose-50 px-2 py-0.5 rounded-md">
+              {flatType}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+            {FLAT_TYPES.map((type) => {
+              const isSelected = flatType === type.id;
+              return (
+                <button
+                  key={type.id}
+                  type="button"
+                  id={`btn-flattype-${type.id.replace(' ', '-').toLowerCase()}`}
+                  onClick={() => {
+                    setFlatType(type.id);
+                    if (errors.flatType) setErrors((prev) => ({ ...prev, flatType: undefined }));
+                  }}
+                  className={`p-2 rounded-xl border text-center transition-all ${
+                    isSelected
+                      ? 'bg-rose-600 text-white border-rose-600 shadow-xs font-semibold'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="text-xs font-bold">{type.label}</div>
+                  <div className={`text-[10px] ${isSelected ? 'text-rose-100' : 'text-slate-400'}`}>
+                    {type.sub}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          {errors.flatType && <p className="text-xs text-rose-600">{errors.flatType}</p>}
+        </div>
+
+        {/* Storey (Floor Level) */}
         <div className="space-y-1.5">
           <label
-            htmlFor="input-unit-number"
+            htmlFor="select-hdb-storey"
             className="block text-xs font-semibold uppercase tracking-wider text-slate-700"
           >
-            Unit Number <span className="text-rose-600">*</span>
+            Which Storey (Floor Level) <span className="text-rose-600">*</span>
           </label>
           <div className="relative rounded-xl shadow-xs">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-              <Hash className="w-4 h-4" />
+              <Layers className="w-4 h-4" />
             </div>
-            <input
-              type="text"
-              id="input-unit-number"
-              value={unitNumber}
+            <select
+              id="select-hdb-storey"
+              value={storey}
               onChange={(e) => {
-                setUnitNumber(e.target.value);
-                if (errors.unitNumber) setErrors((prev) => ({ ...prev, unitNumber: undefined }));
+                setStorey(e.target.value);
+                if (errors.storey) setErrors((prev) => ({ ...prev, storey: undefined }));
               }}
-              placeholder="e.g. #09-142"
-              className={`w-full pl-9 pr-3 py-2.5 text-sm bg-white rounded-xl border transition-all outline-hidden ${
-                errors.unitNumber
+              className={`w-full pl-9 pr-3 py-2.5 text-sm bg-white rounded-xl border transition-all outline-hidden appearance-none cursor-pointer ${
+                errors.storey
                   ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-200'
                   : 'border-slate-300 focus:border-rose-500 focus:ring-2 focus:ring-rose-100'
               }`}
-            />
+            >
+              {STOREY_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
           </div>
-          {errors.unitNumber ? (
-            <p className="text-xs text-rose-600">{errors.unitNumber}</p>
+          {errors.storey ? (
+            <p className="text-xs text-rose-600">{errors.storey}</p>
           ) : (
             <p className="text-[11px] text-slate-500">
-              Used to account for floor level elevation premium in the valuation model.
+              Used in the valuation model to factor in floor level elevation premium.
             </p>
           )}
         </div>

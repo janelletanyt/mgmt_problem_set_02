@@ -29,20 +29,23 @@ const HDB_TOWNS = [
   'YISHUN',
 ];
 
-export function extractHdbTown(address: string): string {
+export function extractHdbTown(address: string): string | null {
   const upper = address.toUpperCase();
   for (const town of HDB_TOWNS) {
     if (upper.includes(town)) {
       return town;
     }
   }
-  // Check for common abbreviations
+  // Check for common abbreviations & landmarks
   if (upper.includes('AMK')) return 'ANG MO KIO';
   if (upper.includes('TPY')) return 'TOA PAYOH';
   if (upper.includes('CCK')) return 'CHOA CHU KANG';
-  if (upper.includes('JURONG')) return 'JURONG WEST';
+  if (upper.includes('JURONG WEST') || upper.includes('BOON LAY') || upper.includes('PIONEER')) return 'JURONG WEST';
+  if (upper.includes('JURONG EAST')) return 'JURONG EAST';
   if (upper.includes('KALLANG') || upper.includes('WHAMPOA')) return 'KALLANG/WHAMPOA';
-  return 'TAMPINES'; // Sensible default
+  if (upper.includes('REDHILL') || upper.includes('TIONG BAHRU') || upper.includes('TELOK BLANGAH')) return 'BUKIT MERAH';
+  if (upper.includes('TANJONG PAGAR') || upper.includes('CHINATOWN') || upper.includes('BRAS BASAH')) return 'CENTRAL AREA';
+  return null; // Return null when no real town is matched, preventing fallback to Tampines
 }
 
 /**
@@ -79,65 +82,95 @@ export async function fetchValuationForecast(data: FlatFormData): Promise<Valuat
   let statusDetail: string | undefined;
   let livePayload: LiveResalePayload | null = null;
 
-  try {
-    const response = await fetch(`/api/resale?town=${encodeURIComponent(town)}`);
-
-    if (!response.ok) {
-      apiStatus = 'refused';
-      let errorData: any = {};
-      try {
-        errorData = await response.json();
-      } catch {
-        // empty body handled gracefully
-      }
-      statusSentence = 'The data.gov.sg upstream service refused the request or returned an authentication error.';
-      statusDetail = errorData.reason || errorData.message || `Upstream returned HTTP ${response.status}`;
-    } else {
-      const json: LiveResalePayload = await response.json();
-
-      if (json.isEmpty || !json.records || json.records.length === 0) {
-        apiStatus = 'empty';
-        statusSentence = 'No historical resale transactions were found for this estate on data.gov.sg.';
-        statusDetail = `Zero recorded transactions found for town: ${town}.`;
-        livePayload = json;
-      } else {
-        apiStatus = 'success';
-        statusSentence = 'Valuation successfully calculated using live HDB transactions from data.gov.sg.';
-        livePayload = json;
-      }
-    }
-  } catch (networkError: any) {
-    apiStatus = 'unreachable';
-    statusSentence = 'The data.gov.sg upstream service is currently unreachable due to network connectivity issues.';
-    statusDetail = networkError.message || 'Network fetch failure';
-  }
-
-  // Determine baseline price and CAGR
-  // If live data was successfully retrieved, use live median price & live historical CAGR!
-  let basePrice = 580000;
-  let baselineCAGR = 0.031;
-
-  if (apiStatus === 'success' && livePayload && livePayload.latestMedianPrice > 0) {
-    basePrice = livePayload.latestMedianPrice;
-    baselineCAGR = (livePayload.historicalCAGR || 3.2) / 100;
+  if (!town) {
+    // User keyed in random information or an unrecognized estate
+    apiStatus = 'empty';
+    statusSentence = 'Your HDB resale flat value cannot be forecasted due to a lack of relevant data.';
+    statusDetail = `The address "${data.address}" does not match any recognized Singapore HDB town in the official dataset.`;
   } else {
-    // Fallback baseline for non-success cases so the user can still see the projected framework
-    const addrLower = data.address.toLowerCase();
-    if (addrLower.includes('bishan') || addrLower.includes('toa payoh') || addrLower.includes('queenstown') || addrLower.includes('bukit merah')) {
-      basePrice = 720000;
-    } else if (addrLower.includes('marine parade') || addrLower.includes('tanjong pagar') || addrLower.includes('kallang')) {
-      basePrice = 780000;
-    } else if (addrLower.includes('punggol') || addrLower.includes('sengkang') || addrLower.includes('woodlands') || addrLower.includes('yishun')) {
-      basePrice = 510000;
-    } else if (addrLower.includes('tampines') || addrLower.includes('bedok') || addrLower.includes('jurong')) {
-      basePrice = 590000;
+    try {
+      const flatTypeParam = data.flatType ? `&flat_type=${encodeURIComponent(data.flatType)}` : '';
+      const storeyParam = data.storey ? `&storey=${encodeURIComponent(data.storey)}` : '';
+      const response = await fetch(`/api/resale?town=${encodeURIComponent(town)}${flatTypeParam}${storeyParam}`);
+
+      if (!response.ok) {
+        apiStatus = 'refused';
+        let errorData: any = {};
+        try {
+          errorData = await response.json();
+        } catch {
+          // empty body handled gracefully
+        }
+        statusSentence = 'The data.gov.sg upstream service refused the request or returned an authentication error.';
+        statusDetail = errorData.reason || errorData.message || `Upstream returned HTTP ${response.status}`;
+      } else {
+        const json: LiveResalePayload = await response.json();
+
+        if (json.isEmpty || !json.records || json.records.length === 0 || !json.latestMedianPrice) {
+          apiStatus = 'empty';
+          statusSentence = 'Your HDB resale flat value cannot be forecasted due to a lack of relevant data.';
+          statusDetail = `Zero recorded transactions found for town: ${town}${data.flatType ? ` (${data.flatType})` : ''}.`;
+          livePayload = json;
+        } else {
+          apiStatus = 'success';
+          statusSentence = 'Valuation successfully calculated using live HDB transactions from data.gov.sg.';
+          livePayload = json;
+        }
+      }
+    } catch (networkError: any) {
+      apiStatus = 'unreachable';
+      statusSentence = 'The data.gov.sg upstream service is currently unreachable due to network connectivity issues.';
+      statusDetail = networkError.message || 'Network fetch failure';
     }
   }
 
-  // Floor level adjustment from unit number if detected (e.g. #12-34 -> 12th floor)
-  const floorMatch = data.unitNumber.match(/#(\d+)-/);
-  const floorLevel = floorMatch ? parseInt(floorMatch[1], 10) : 7;
-  const floorPremium = Math.min(Math.max((floorLevel - 5) * 4500, -20000), 45000);
+  // Strictly enforce user requirement:
+  // "i only want data that has been pulled from my api. if there is no real dataset to refer to,
+  // it should return with a statement that 'your hdb resale flat value cannot be forecasted due to a lack of relevant data'."
+  // Do NOT generate simulated prices when apiStatus is not 'success'
+  if (apiStatus !== 'success' || !livePayload || !livePayload.latestMedianPrice) {
+    return {
+      address: data.address.trim(),
+      storey: data.storey.trim(),
+      flatType: data.flatType.trim(),
+      targetHorizonYears: data.forecastYears,
+      targetCalendarYear: targetYear,
+      estimatedMedianPrice: 0,
+      estimatedPriceRangeLow: 0,
+      estimatedPriceRangeHigh: 0,
+      annualGrowthRatePct: 0,
+      currentEstimatedBasePrice: 0,
+      breakdown: {
+        pastTrendsImpact: 'No live historical dataset available to establish baseline growth rate.',
+        forecastingModelImpact: 'Projection models suspended due to absence of verified baseline.',
+        propertySpecificsImpact: 'Lease and floor adjustments suspended.',
+        macroFactorsImpact: 'Macro risk factors cannot be applied without verified transaction data.',
+      },
+      trajectory: [],
+      isApiConnected: false,
+      apiStatus,
+      statusSentence: statusSentence || 'Your HDB resale flat value cannot be forecasted due to a lack of relevant data.',
+      statusDetail,
+    };
+  }
+
+  // Real data pulled from data.gov.sg
+  let basePrice = livePayload.latestMedianPrice;
+  const baselineCAGR = (livePayload.historicalCAGR || 3.2) / 100;
+
+  // Floor level adjustment based on selected storey range or number
+  // Common HDB storeys: "01 TO 03", "04 TO 06", "07 TO 09", "10 TO 12", etc.
+  let floorMidpoint = 7;
+  const rangeMatch = data.storey.match(/(\d+)\s*TO\s*(\d+)/i);
+  if (rangeMatch) {
+    floorMidpoint = Math.round((parseInt(rangeMatch[1], 10) + parseInt(rangeMatch[2], 10)) / 2);
+  } else {
+    const numMatch = data.storey.match(/\d+/);
+    if (numMatch) {
+      floorMidpoint = parseInt(numMatch[0], 10);
+    }
+  }
+  const floorPremium = Math.min(Math.max((floorMidpoint - 5) * 4500, -20000), 55000);
   basePrice += floorPremium;
 
   // Frameworks calculations:
@@ -170,7 +203,8 @@ export async function fetchValuationForecast(data: FlatFormData): Promise<Valuat
 
   return {
     address: data.address.trim(),
-    unitNumber: data.unitNumber.trim(),
+    storey: data.storey.trim(),
+    flatType: data.flatType.trim(),
     targetHorizonYears: data.forecastYears,
     targetCalendarYear: targetYear,
     estimatedMedianPrice: futureMedian,
@@ -180,10 +214,10 @@ export async function fetchValuationForecast(data: FlatFormData): Promise<Valuat
     currentEstimatedBasePrice: basePrice,
     breakdown: {
       pastTrendsImpact: apiStatus === 'success' && livePayload
-        ? `Live data.gov.sg CAGR calculated at ${livePayload.historicalCAGR.toFixed(1)}% p.a. based on ${livePayload.sampleCount} official transactions in ${town}.`
+        ? `Live data.gov.sg CAGR calculated at ${livePayload.historicalCAGR.toFixed(1)}% p.a. based on ${livePayload.sampleCount} official ${data.flatType} transactions in ${town}.`
         : `10-Year historical baseline CAGR modeled at ${(baselineCAGR * 100).toFixed(1)}% p.a.`,
       forecastingModelImpact: `ARIMA & linear trend projection calibrated with ${(momentumFactor * 100).toFixed(0)}% momentum factor.`,
-      propertySpecificsImpact: `Adjusted for lease decay (-${(leaseDecayRate * 100).toFixed(2)}%) and floor level (${floorLevel > 0 ? `Lvl ${floorLevel}` : 'Mid-tier'}).`,
+      propertySpecificsImpact: `Adjusted for flat type (${data.flatType}), storey level (${data.storey}), and lease decay (-${(leaseDecayRate * 100).toFixed(2)}%).`,
       macroFactorsImpact: `Incorporated upcoming BTO supply absorption and prevailing cooling measures.`,
     },
     trajectory,

@@ -11,7 +11,8 @@ export default function App() {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [formData, setFormData] = useState<FlatFormData>({
     address: 'Blk 142 Lorong 2 Toa Payoh',
-    unitNumber: '#09-122',
+    storey: '07 TO 09',
+    flatType: '4 ROOM',
     forecastYears: 5,
   });
   const [valuationResult, setValuationResult] = useState<ValuationResult | null>(null);

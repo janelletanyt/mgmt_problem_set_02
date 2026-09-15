@@ -128,11 +128,15 @@ export const Screen2Framework: React.FC<Screen2FrameworkProps> = ({
         <div className="space-y-0.5 min-w-0 pr-2">
           <div className="flex items-center space-x-1 font-semibold text-slate-800 truncate">
             <Building2 className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-            <span className="truncate">{formData.address}, {formData.unitNumber}</span>
+            <span className="truncate">{formData.address}</span>
           </div>
-          <div className="flex items-center space-x-1 text-slate-500 text-[11px]">
-            <Calendar className="w-3 h-3 text-slate-400" />
-            <span>Horizon: +{formData.forecastYears} {formData.forecastYears === 1 ? 'Year' : 'Years'} ({targetYear})</span>
+          <div className="flex flex-wrap items-center gap-x-2 text-slate-500 text-[11px]">
+            <span className="font-medium text-rose-700 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-200/60">
+              {formData.flatType}
+            </span>
+            <span>{formData.storey}</span>
+            <span>•</span>
+            <span>Horizon: +{formData.forecastYears}y ({targetYear})</span>
           </div>
         </div>
         <button

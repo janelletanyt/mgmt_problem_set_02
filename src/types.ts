@@ -1,8 +1,8 @@
 export interface FlatFormData {
   address: string;
-  unitNumber: string;
+  storey: string; // e.g. "07 TO 09" or storey level
+  flatType: string; // e.g. "4 ROOM" (Number of rooms)
   forecastYears: number; // 1 to 10 years
-  flatType?: string; // Optional helper for standard pricing baseline
 }
 
 export interface ValuationFrameworkPillar {
@@ -44,7 +44,8 @@ export interface LiveResalePayload {
 
 export interface ValuationResult {
   address: string;
-  unitNumber: string;
+  storey: string;
+  flatType: string;
   targetHorizonYears: number;
   targetCalendarYear: number;
   estimatedMedianPrice: number;
