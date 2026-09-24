@@ -9,6 +9,42 @@
     <meta property="og:description" content="An app for Singaporean HDB resale flat home owners to find out the valuation of their HDB resale flat in the next 1-10 years." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
+    <script>
+      // Prevent cross-origin third-party script errors (e.g., Disqus embeds/trackers in iframes) from crashing the app
+      window.addEventListener(
+        'error',
+        function (event) {
+          if (
+            event.message === 'Script error.' ||
+            !event.filename ||
+            (typeof event.filename === 'string' &&
+              (event.filename.indexOf('disqus') !== -1 ||
+                event.filename.indexOf('liadm') !== -1 ||
+                event.filename.indexOf('rezync') !== -1))
+          ) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return true;
+          }
+        },
+        true
+      );
+      var _origOnError = window.onerror;
+      window.onerror = function (message, source, lineno, colno, error) {
+        if (
+          message === 'Script error.' ||
+          (source &&
+            (source.indexOf('disqus') !== -1 ||
+              source.indexOf('liadm') !== -1 ||
+              source.indexOf('rezync') !== -1))
+        ) {
+          return true;
+        }
+        if (typeof _origOnError === 'function') {
+          return _origOnError.apply(this, arguments);
+        }
+      };
+    </script>
   </head>
   <body>
     <div id="root"></div>

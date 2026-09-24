@@ -15,31 +15,41 @@ export const DisqusComments: React.FC = () => {
     const identifier = 'home';
 
     // Set configuration for the initial embed load
-    window.disqus_config = function (this: any) {
+    const configure = function (this: any) {
+      if (!this.page) {
+        this.page = {};
+      }
       this.page.url = canonicalUrl;
       this.page.identifier = identifier;
     };
 
-    if (window.DISQUS) {
-      // Script is already loaded; reload thread with current page configuration
-      window.DISQUS.reset({
-        reload: true,
-        config: function (this: any) {
-          this.page.url = canonicalUrl;
-          this.page.identifier = identifier;
-        },
-      });
-    } else {
-      // Ensure script tag is inserted only once across re-renders
-      const scriptId = 'disqus-embed-script';
-      if (!document.getElementById(scriptId)) {
-        const script = document.createElement('script');
-        script.id = scriptId;
-        script.src = 'https://geekai.disqus.com/embed.js';
-        script.setAttribute('data-timestamp', String(+new Date()));
-        script.async = true;
-        (document.head || document.body).appendChild(script);
+    window.disqus_config = configure;
+
+    try {
+      if (window.DISQUS) {
+        // Script is already loaded; reload thread with current page configuration
+        window.DISQUS.reset({
+          reload: true,
+          config: configure,
+        });
+      } else {
+        // Ensure script tag is inserted only once across re-renders
+        const scriptId = 'disqus-embed-script';
+        if (!document.getElementById(scriptId)) {
+          const script = document.createElement('script');
+          script.id = scriptId;
+          script.src = 'https://geekai.disqus.com/embed.js';
+          script.setAttribute('data-timestamp', String(+new Date()));
+          script.async = true;
+          script.onerror = (e) => {
+            // Silently absorb script load failure (e.g., adblock, preview sandbox)
+            console.debug('Disqus script could not be loaded in this environment', e);
+          };
+          (document.head || document.body).appendChild(script);
+        }
       }
+    } catch (err) {
+      console.debug('Disqus initialization note:', err);
     }
   }, []);
 
