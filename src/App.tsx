@@ -3,6 +3,7 @@ import { Header } from './components/Header';
 import { Screen1Form } from './components/Screen1Form';
 import { Screen2Framework } from './components/Screen2Framework';
 import { Screen3Valuation } from './components/Screen3Valuation';
+import { DisqusSection } from './components/DisqusSection';
 import { fetchValuationForecast } from './services/valuationApi';
 import { FlatFormData, ValuationResult } from './types';
 import { Database, ExternalLink } from 'lucide-react';
@@ -113,6 +114,9 @@ export default function App() {
             </>
           )}
         </div>
+
+        {/* Disqus Feedback Thread Section */}
+        <DisqusSection />
 
         {/* Footer with Singapore Open Data Licence attribution and Privacy Notice */}
         <footer className="py-3 px-4 bg-slate-50 border-t border-slate-200 text-left space-y-2">

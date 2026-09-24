@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { MapPin, Layers, Home, Calendar, ArrowRight, Sparkles } from 'lucide-react';
 import { FlatFormData } from '../types';
-import { DisqusComments } from './DisqusComments';
 
 interface Screen1FormProps {
   initialData: FlatFormData;
@@ -302,9 +301,6 @@ export const Screen1Form: React.FC<Screen1FormProps> = ({ initialData, onSubmit 
           </button>
         </div>
       </form>
-
-      {/* Visitor Feedback & Discussion Thread */}
-      <DisqusComments />
     </div>
   );
 };
