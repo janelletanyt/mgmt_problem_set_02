@@ -11,7 +11,7 @@ declare global {
 
 export const DisqusComments: React.FC = () => {
   useEffect(() => {
-    const canonicalUrl = 'https://mgmt-problem-set-02.vercel.app/';
+    const canonicalUrl = 'https://mgmt-problem-set-02.vercel.app';
     const identifier = 'home';
 
     // Set configuration for the initial embed load
