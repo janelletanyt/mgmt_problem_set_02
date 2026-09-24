@@ -19,6 +19,7 @@
             !event.filename ||
             (typeof event.filename === 'string' &&
               (event.filename.indexOf('disqus') !== -1 ||
+                event.filename.indexOf('disquscdn') !== -1 ||
                 event.filename.indexOf('liadm') !== -1 ||
                 event.filename.indexOf('rezync') !== -1))
           ) {
@@ -33,8 +34,10 @@
       window.onerror = function (message, source, lineno, colno, error) {
         if (
           message === 'Script error.' ||
-          (source &&
+          !source ||
+          (typeof source === 'string' &&
             (source.indexOf('disqus') !== -1 ||
+              source.indexOf('disquscdn') !== -1 ||
               source.indexOf('liadm') !== -1 ||
               source.indexOf('rezync') !== -1))
         ) {
@@ -44,6 +47,24 @@
           return _origOnError.apply(this, arguments);
         }
       };
+      window.addEventListener(
+        'unhandledrejection',
+        function (event) {
+          var reason = event.reason;
+          if (
+            !reason ||
+            (typeof reason === 'string' && reason.indexOf('disqus') !== -1) ||
+            (reason &&
+              reason.message &&
+              (reason.message === 'Script error.' || reason.message.indexOf('disqus') !== -1))
+          ) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return true;
+          }
+        },
+        true
+      );
     </script>
     <script type="text/javascript">
       if (window.location.hostname === "mgmt-problem-set-02.vercel.app") {

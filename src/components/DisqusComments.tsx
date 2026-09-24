@@ -11,45 +11,53 @@ declare global {
 
 export const DisqusComments: React.FC = () => {
   useEffect(() => {
-    const canonicalUrl = 'https://mgmt-problem-set-02.vercel.app';
+    const canonicalUrl = 'https://mgmt-problem-set-02.vercel.app/';
     const identifier = 'home';
 
-    // Set configuration for the initial embed load
-    const configure = function (this: any) {
-      if (!this.page) {
-        this.page = {};
-      }
+    // Set configuration variables for the Disqus Universal Code
+    const configureDisqus = function (this: any) {
+      this.page = this.page || {};
       this.page.url = canonicalUrl;
       this.page.identifier = identifier;
     };
 
-    window.disqus_config = configure;
+    window.disqus_config = configureDisqus;
 
-    try {
-      if (window.DISQUS) {
-        // Script is already loaded; reload thread with current page configuration
+    if (window.DISQUS) {
+      try {
         window.DISQUS.reset({
           reload: true,
-          config: configure,
+          config: configureDisqus,
+        });
+      } catch (err) {
+        console.debug('Disqus reset note:', err);
+      }
+    } else {
+      const existingScript = document.querySelector<HTMLScriptElement>(
+        'script[src="https://geekai.disqus.com/embed.js"]'
+      );
+
+      if (existingScript) {
+        existingScript.addEventListener('load', () => {
+          if (window.DISQUS) {
+            try {
+              window.DISQUS.reset({
+                reload: true,
+                config: configureDisqus,
+              });
+            } catch (err) {
+              console.debug('Disqus reset on load note:', err);
+            }
+          }
         });
       } else {
-        // Ensure script tag is inserted only once across re-renders
-        const scriptId = 'disqus-embed-script';
-        if (!document.getElementById(scriptId)) {
-          const script = document.createElement('script');
-          script.id = scriptId;
-          script.src = 'https://geekai.disqus.com/embed.js';
-          script.setAttribute('data-timestamp', String(+new Date()));
-          script.async = true;
-          script.onerror = (e) => {
-            // Silently absorb script load failure (e.g., adblock, preview sandbox)
-            console.debug('Disqus script could not be loaded in this environment', e);
-          };
-          (document.head || document.body).appendChild(script);
-        }
+        const d = document;
+        const s = d.createElement('script');
+        s.src = 'https://geekai.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', String(+new Date()));
+        s.async = true;
+        (d.head || d.body).appendChild(s);
       }
-    } catch (err) {
-      console.debug('Disqus initialization note:', err);
     }
   }, []);
 
@@ -58,7 +66,13 @@ export const DisqusComments: React.FC = () => {
       <p className="text-xs text-slate-600 mb-3">
         Leave your feedback below — let us know what worked for you and what did not.
       </p>
-      <div id="disqus_thread" className="min-h-[140px]" />
+      <div id="disqus_thread" className="min-h-[160px]" />
+      <noscript>
+        Please enable JavaScript to view the{' '}
+        <a href="https://disqus.com/?ref_noscript" rel="nofollow" className="text-rose-600 underline">
+          comments powered by Disqus.
+        </a>
+      </noscript>
     </section>
   );
 };
