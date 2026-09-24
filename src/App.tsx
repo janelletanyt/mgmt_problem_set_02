@@ -114,10 +114,40 @@ export default function App() {
           )}
         </div>
 
-        {/* Footer with Singapore Open Data Licence attribution */}
-        <footer className="py-3 px-4 bg-slate-50 border-t border-slate-200 text-left space-y-1.5">
+        {/* Footer with Singapore Open Data Licence attribution and Privacy Notice */}
+        <footer className="py-3 px-4 bg-slate-50 border-t border-slate-200 text-left space-y-2">
           <div className="text-[10px] text-slate-500 leading-relaxed">
             Contains information from <strong>Resale flat prices based on registration date from Jan-2017 onwards</strong> accessed from <a href="https://data.gov.sg" target="_blank" rel="noopener noreferrer" className="text-rose-600 underline hover:text-rose-700">data.gov.sg</a> which is made available under the terms of the <a href="https://data.gov.sg/open-data-licence" target="_blank" rel="noopener noreferrer" className="text-rose-600 underline hover:text-rose-700 inline-flex items-center space-x-0.5"><span>Singapore Open Data Licence version 1.0</span><ExternalLink className="w-2.5 h-2.5 inline ml-0.5" /></a>.
+          </div>
+          <div className="text-[10px] text-slate-500 leading-relaxed pt-1.5 border-t border-slate-200/50">
+            This page uses Microsoft Clarity and Disqus, which use cookies to record how visitors use the site and to host comments. By using this page you agree that we and Microsoft may collect and use this data. See the{' '}
+            <a
+              href="https://www.microsoft.com/privacy/privacystatement"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-rose-600 underline hover:text-rose-700 font-medium"
+            >
+              Microsoft Privacy Statement
+            </a>
+            , the{' '}
+            <a
+              href="https://disqus.com/privacy-policy/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-rose-600 underline hover:text-rose-700 font-medium"
+            >
+              Disqus privacy policy
+            </a>{' '}
+            and the{' '}
+            <a
+              href="https://disqus.com/data-sharing-settings/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-rose-600 underline hover:text-rose-700 font-medium"
+            >
+              Disqus data sharing settings
+            </a>
+            .
           </div>
           <div className="text-[9px] text-slate-400 pt-0.5 border-t border-slate-200/50 flex justify-between items-center">
             <span>MGMT 6110 Human-AI Collaboration</span>
