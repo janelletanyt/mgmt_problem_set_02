@@ -79,17 +79,45 @@ export const DisqusSection: React.FC = () => {
   }, []);
 
   return (
-    <section className="px-4 sm:px-6 py-5 border-t border-slate-200 bg-white" aria-labelledby="feedback-heading">
-      <h2 id="feedback-heading" className="text-base font-semibold text-slate-800 mb-1">
+    <section
+      className="px-4 sm:px-6 py-5 border-t"
+      style={{
+        backgroundColor: 'rgb(255, 255, 255)',
+        borderColor: 'rgb(226, 232, 240)',
+        borderTopColor: 'rgb(226, 232, 240)',
+        color: 'rgb(30, 41, 59)',
+      }}
+      aria-labelledby="feedback-heading"
+    >
+      <h2
+        id="feedback-heading"
+        className="text-base font-semibold mb-1"
+        style={{ color: 'rgb(30, 41, 59)' }}
+      >
         Feedback
       </h2>
-      <p className="text-xs text-slate-500 mb-4">
+      <p
+        className="text-xs mb-4"
+        style={{ color: 'rgb(100, 116, 139)' }}
+      >
         Leave your feedback below — let us know what worked for you and what did not.
       </p>
-      <div id="disqus_thread" className="min-h-[160px]" />
+      <div
+        id="disqus_thread"
+        className="min-h-[160px]"
+        style={{
+          backgroundColor: 'rgb(255, 255, 255)',
+          color: 'rgb(30, 41, 59)',
+        }}
+      />
       <noscript>
         Please enable JavaScript to view the{' '}
-        <a href="https://disqus.com/?ref_noscript" rel="nofollow" className="text-rose-600 underline">
+        <a
+          href="https://disqus.com/?ref_noscript"
+          rel="nofollow"
+          className="underline"
+          style={{ color: 'rgb(225, 29, 72)' }}
+        >
           comments powered by Disqus.
         </a>
       </noscript>
