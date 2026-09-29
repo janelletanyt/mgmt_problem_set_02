@@ -1,7 +1,7 @@
 Heuristic evaluation by JANELLE TAN, Group 8
 Tested on mobile and desktop, 28/09/2026, 11pm
 
-WANG BEICHAO https://mma-deal-hub-w5.vercel.app/
+https://mma-deal-hub-w5.vercel.app/
 Finding 1: Phone field accepts letters
 Where: After clicking 'Select Contract" at the Test Phone Number field.
 What I did, what I saw: I typed "Test User" as the name and "abcxyz" as the phone number. The field accepted the letters without any warning. I only found out it was wrong after clicking "Preview Demo Result".
@@ -32,7 +32,7 @@ Severity, and why: 3, driven by impact. A first-time visitor can't judge whether
 The repair: A short "How it works" section answers the main questions about transfers.
 
 
-MOHAMMED RIZWAN KHAN https://evstations.vercel.app/ 
+https://evstations.vercel.app/ 
 Finding 1: Battery level
 1 · Where: at the battery − / + control in the header
 2 · What I did, what I saw I raised the battery to 25% and reloaded. It went back to 20%. The control moves only in 5% steps and you can't type a number, so going from 20% to 80% takes 12 presses.
@@ -56,7 +56,7 @@ Finding 3: The "nearest" list leaves out stations the site knows about
 6 · The repair Every station within the searched radius that has live data appears on Screen 1. If any are left out, the screen says how many and why.
 
 
-SHRIVIDHYA SRINIVASAN  https://parksg-seven.vercel.app 
+https://parksg-seven.vercel.app 
 Finding 1: Route gives no response Where: Orchard zone, Ngee Ann City card, the Route button What I did, what I saw: I pressed Route, nothing changed on the page. Which heuristic: 1, Visibility of System Status. Screen or system: Screen. The page knows the button was pressed. Severity, and why: 3, driven by how often it happens. Every card has a Route button. The repair: From the moment Route is pressed, the card shows that a route is being calculated. 
 Finding 2: Carparks are listed by lot count, so the nearest ones are buried Where: Zone results list What I did, what I saw: There is no way to sort by distance. Which heuristic: 8, Aesthetic and Minimalist Design. Screen or system: Screen. The page already has the distance and lot count for every card. Severity, and why: 2, driven by how often it happens. Every visitor meets this list, but they can work around it by scrolling or searching. The repair: The first few cards are the closest carparks with space. Carparks far outside the zone are left out or clearly separated, and visitors can switch between nearest and most lots.  
 Finding 3: Nothing explains the numbers, distances or badges Where: https://parksg-seven.vercel.app/, any zone, on the cards. What I did, what I saw: LTA / HDB / URA badges and the "Almost full" threshold are not explained, and there is no help or info link anywhere on the page. Which heuristic: 10, Help and Documentation. Screen or system: Screen. Severity, and why: 2, driven by whether people can learn around it. Most people will guess the number means free lots. The repair: Visitors can see, next to the cards, what the number counts, where distances are measured from, and what "Almost full" means.
