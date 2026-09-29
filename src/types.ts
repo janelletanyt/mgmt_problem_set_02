@@ -3,6 +3,9 @@ export interface FlatFormData {
   storey: string; // e.g. "07 TO 09" or storey level
   flatType: string; // e.g. "4 ROOM" (Number of rooms)
   forecastYears: number; // 1 to 10 years
+  remainingLease: number; // In years (1 to 99)
+  isLeaseUserSupplied: boolean; // True if user manually entered/adjusted; false if system assumed
+  leaseAssumptionNote?: string; // Information on how the remaining lease was estimated
 }
 
 export interface ValuationFrameworkPillar {
@@ -34,6 +37,9 @@ export interface LiveResalePayload {
   latestMedianPrice: number;
   historicalCAGR: number;
   latestMonth: string | null;
+  earliestMonth?: string | null;
+  dataPeriod?: string | null;
+  lastUpdateDate?: string | null;
   records: LiveRecord[];
   error?: string;
   reason?: string;
@@ -48,6 +54,9 @@ export interface ValuationResult {
   flatType: string;
   targetHorizonYears: number;
   targetCalendarYear: number;
+  remainingLease: number; // In years (1 to 99)
+  isLeaseUserSupplied: boolean; // True if user specified; false if system assumed
+  leaseAssumptionNote?: string;
   estimatedMedianPrice: number;
   estimatedPriceRangeLow: number;
   estimatedPriceRangeHigh: number;
@@ -63,6 +72,8 @@ export interface ValuationResult {
     yearOffset: number;
     calendarYear: number;
     projectedPrice: number;
+    projectedLow?: number;
+    projectedHigh?: number;
   }[];
   isApiConnected: boolean; // True when live data.gov.sg data is successfully used
   apiStatus: ApiValuationStatus;
@@ -74,6 +85,9 @@ export interface ValuationResult {
     latestMedianPrice: number;
     historicalCAGR: number;
     latestMonth: string | null;
+    earliestMonth?: string | null;
+    dataPeriod?: string | null;
+    lastUpdateDate?: string | null;
     records: LiveRecord[];
   };
 }

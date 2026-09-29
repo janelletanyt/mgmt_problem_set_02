@@ -76,7 +76,7 @@ export const Screen2Framework: React.FC<Screen2FrameworkProps> = ({
         {
           term: 'Lease decay',
           description:
-            'Factor in the age of the building. HDB flats lose value as their 99-year lease shortens, especially past the 30-year mark.',
+            `Calculates leasehold depreciation based on your flat's ${formData.remainingLease || 65}-year remaining lease (${formData.isLeaseUserSupplied ? 'user-supplied' : 'system assumption'}). HDB flats lose value as their lease shortens, especially past the 30-year mark.`,
         },
         {
           term: 'Location and attributes',
@@ -125,25 +125,38 @@ export const Screen2Framework: React.FC<Screen2FrameworkProps> = ({
 
       {/* Target Property Summary Bar */}
       <div className="bg-slate-100 rounded-xl p-3 border border-slate-200/80 flex items-center justify-between text-xs">
-        <div className="space-y-0.5 min-w-0 pr-2">
+        <div className="space-y-1 min-w-0 pr-2">
           <div className="flex items-center space-x-1 font-semibold text-slate-800 truncate">
             <Building2 className="w-3.5 h-3.5 text-slate-500 shrink-0" />
             <span className="truncate">{formData.address}</span>
           </div>
-          <div className="flex flex-wrap items-center gap-x-2 text-slate-500 text-[11px]">
-            <span className="font-medium text-rose-700 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-200/60">
+          <div className="flex flex-wrap items-center gap-1.5 text-slate-600 text-[11px]">
+            <span className="font-semibold text-rose-700 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-200/60">
               {formData.flatType}
             </span>
             <span>{formData.storey}</span>
             <span>•</span>
-            <span>Horizon: +{formData.forecastYears}y ({targetYear})</span>
+            <span className="inline-flex items-center space-x-1">
+              <strong>{formData.remainingLease || 65}y lease</strong>
+              <span
+                className={`text-[9px] font-bold px-1.5 py-0.2 rounded border ${
+                  formData.isLeaseUserSupplied
+                    ? 'bg-blue-50 text-blue-800 border-blue-200'
+                    : 'bg-amber-50 text-amber-800 border-amber-200'
+                }`}
+              >
+                {formData.isLeaseUserSupplied ? 'User Supplied' : 'Assumed'}
+              </span>
+            </span>
+            <span>•</span>
+            <span>+{formData.forecastYears}y ({targetYear})</span>
           </div>
         </div>
         <button
           type="button"
           id="btn-edit-inputs"
           onClick={onBack}
-          className="shrink-0 text-xs text-rose-600 hover:text-rose-700 font-medium px-2 py-1 rounded-md bg-white border border-rose-200 hover:bg-rose-50 transition-colors"
+          className="shrink-0 text-xs text-rose-600 hover:text-rose-700 font-medium px-2 py-1 rounded-md bg-white border border-rose-200 hover:bg-rose-50 transition-colors cursor-pointer"
         >
           Edit
         </button>

@@ -29,23 +29,10 @@ const HDB_TOWNS = [
   'YISHUN',
 ];
 
+import { detectHdbTown } from '../data/hdbBlocks';
+
 export function extractHdbTown(address: string): string | null {
-  const upper = address.toUpperCase();
-  for (const town of HDB_TOWNS) {
-    if (upper.includes(town)) {
-      return town;
-    }
-  }
-  // Check for common abbreviations & landmarks
-  if (upper.includes('AMK')) return 'ANG MO KIO';
-  if (upper.includes('TPY')) return 'TOA PAYOH';
-  if (upper.includes('CCK')) return 'CHOA CHU KANG';
-  if (upper.includes('JURONG WEST') || upper.includes('BOON LAY') || upper.includes('PIONEER')) return 'JURONG WEST';
-  if (upper.includes('JURONG EAST')) return 'JURONG EAST';
-  if (upper.includes('KALLANG') || upper.includes('WHAMPOA')) return 'KALLANG/WHAMPOA';
-  if (upper.includes('REDHILL') || upper.includes('TIONG BAHRU') || upper.includes('TELOK BLANGAH')) return 'BUKIT MERAH';
-  if (upper.includes('TANJONG PAGAR') || upper.includes('CHINATOWN') || upper.includes('BRAS BASAH')) return 'CENTRAL AREA';
-  return null; // Return null when no real town is matched, preventing fallback to Tampines
+  return detectHdbTown(address);
 }
 
 /**
@@ -135,6 +122,9 @@ export async function fetchValuationForecast(data: FlatFormData): Promise<Valuat
       flatType: data.flatType.trim(),
       targetHorizonYears: data.forecastYears,
       targetCalendarYear: targetYear,
+      remainingLease: data.remainingLease || 65,
+      isLeaseUserSupplied: Boolean(data.isLeaseUserSupplied),
+      leaseAssumptionNote: data.leaseAssumptionNote,
       estimatedMedianPrice: 0,
       estimatedPriceRangeLow: 0,
       estimatedPriceRangeHigh: 0,
@@ -159,7 +149,6 @@ export async function fetchValuationForecast(data: FlatFormData): Promise<Valuat
   const baselineCAGR = (livePayload.historicalCAGR || 3.2) / 100;
 
   // Floor level adjustment based on selected storey range or number
-  // Common HDB storeys: "01 TO 03", "04 TO 06", "07 TO 09", "10 TO 12", etc.
   let floorMidpoint = 7;
   const rangeMatch = data.storey.match(/(\d+)\s*TO\s*(\d+)/i);
   if (rangeMatch) {
@@ -176,13 +165,32 @@ export async function fetchValuationForecast(data: FlatFormData): Promise<Valuat
   // Frameworks calculations:
   // 1. Past Trends: Baseline CAGR
   // 2. Models: Dampened forward momentum
-  const momentumFactor = 1.0 - (data.forecastYears * 0.015);
-  // 3. Property Specifics: Lease decay dampening factor
-  const leaseDecayRate = 0.006 * Math.max(1, data.forecastYears * 0.7);
+  const momentumFactor = 1.0 - (data.forecastYears * 0.012);
+
+  // 3. Property Specifics: Lease decay based on Singapore Land Authority / Bala's curve
+  // Remaining lease is the single most critical determinant of HDB resale valuation retention.
+  const remaining = data.remainingLease && data.remainingLease > 0 ? data.remainingLease : 65;
+  let annualLeaseDecay = 0.005; // 0.5% default
+
+  if (remaining >= 80) {
+    // Newer flats (80-99 years remaining): minimal leasehold drag
+    annualLeaseDecay = 0.002;
+  } else if (remaining >= 60) {
+    // Mature flats (60-79 years remaining): moderate steady decay
+    annualLeaseDecay = 0.006;
+  } else if (remaining >= 40) {
+    // Older flats (40-59 years remaining, e.g. Toa Payoh 1970s blocks):
+    // Accelerated leasehold depreciation due to CPF withdrawal & bank loan tenure limits
+    annualLeaseDecay = 0.015;
+  } else {
+    // Critical lease decay (< 40 years remaining): steep depreciation
+    annualLeaseDecay = 0.026;
+  }
+
   // 4. Macro factors: BTO supply & cooling measures
   const macroAdjustment = -0.004;
 
-  const netAnnualRate = Math.max(0.012, (baselineCAGR * momentumFactor) - leaseDecayRate + macroAdjustment);
+  const netAnnualRate = Math.max(0.002, (baselineCAGR * momentumFactor) - annualLeaseDecay + macroAdjustment);
 
   // Future valuations
   const futureMedian = Math.round(basePrice * Math.pow(1 + netAnnualRate, data.forecastYears) / 1000) * 1000;
@@ -194,10 +202,15 @@ export async function fetchValuationForecast(data: FlatFormData): Promise<Valuat
   const trajectory = [];
   for (let i = 1; i <= Math.max(10, data.forecastYears); i++) {
     const yrPrice = Math.round(basePrice * Math.pow(1 + netAnnualRate, i) / 1000) * 1000;
+    const yrSpread = 0.035 + (i * 0.005);
+    const yrLow = Math.round((yrPrice * (1 - yrSpread)) / 1000) * 1000;
+    const yrHigh = Math.round((yrPrice * (1 + yrSpread)) / 1000) * 1000;
     trajectory.push({
       yearOffset: i,
       calendarYear: currentYear + i,
       projectedPrice: yrPrice,
+      projectedLow: yrLow,
+      projectedHigh: yrHigh,
     });
   }
 
@@ -207,6 +220,9 @@ export async function fetchValuationForecast(data: FlatFormData): Promise<Valuat
     flatType: data.flatType.trim(),
     targetHorizonYears: data.forecastYears,
     targetCalendarYear: targetYear,
+    remainingLease: remaining,
+    isLeaseUserSupplied: Boolean(data.isLeaseUserSupplied),
+    leaseAssumptionNote: data.leaseAssumptionNote,
     estimatedMedianPrice: futureMedian,
     estimatedPriceRangeLow: lowPrice,
     estimatedPriceRangeHigh: highPrice,
@@ -217,8 +233,8 @@ export async function fetchValuationForecast(data: FlatFormData): Promise<Valuat
         ? `Live data.gov.sg CAGR calculated at ${livePayload.historicalCAGR.toFixed(1)}% p.a. based on ${livePayload.sampleCount} official ${data.flatType} transactions in ${town}.`
         : `10-Year historical baseline CAGR modeled at ${(baselineCAGR * 100).toFixed(1)}% p.a.`,
       forecastingModelImpact: `ARIMA & linear trend projection calibrated with ${(momentumFactor * 100).toFixed(0)}% momentum factor.`,
-      propertySpecificsImpact: `Adjusted for flat type (${data.flatType}), storey level (${data.storey}), and lease decay (-${(leaseDecayRate * 100).toFixed(2)}%).`,
-      macroFactorsImpact: `Incorporated upcoming BTO supply absorption and prevailing cooling measures.`,
+      propertySpecificsImpact: `Adjusted for flat type (${data.flatType}), storey level (${data.storey}), and ${remaining}-year remaining lease (${data.isLeaseUserSupplied ? 'user-supplied' : 'system assumption'} with -${(annualLeaseDecay * 100).toFixed(2)}% p.a. lease decay depreciation).`,
+      macroFactorsImpact: `Incorporated upcoming BTO supply absorption and prevailing cooling measures (-0.40% p.a.).`,
     },
     trajectory,
     isApiConnected: apiStatus === 'success',
@@ -231,6 +247,9 @@ export async function fetchValuationForecast(data: FlatFormData): Promise<Valuat
       latestMedianPrice: livePayload.latestMedianPrice,
       historicalCAGR: livePayload.historicalCAGR,
       latestMonth: livePayload.latestMonth,
+      earliestMonth: livePayload.earliestMonth,
+      dataPeriod: livePayload.dataPeriod,
+      lastUpdateDate: livePayload.lastUpdateDate,
       records: livePayload.records,
     } : undefined,
   };

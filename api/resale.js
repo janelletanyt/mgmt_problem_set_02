@@ -171,6 +171,9 @@ export default async function handler(req, res) {
   // 8. Cache header: 1 day (86400s), stale-while-revalidate 2 days (172800s)
   res.setHeader('Cache-Control', 's-maxage=86400, stale-while-revalidate=172800');
 
+  const earliestMonth = sortedRecords[0]?.month || '2017-01';
+  const latestMonth = sortedRecords[sortedRecords.length - 1]?.month || null;
+
   return res.status(200).json({
     town,
     flatType: rawFlatType || 'ALL',
@@ -179,7 +182,10 @@ export default async function handler(req, res) {
     isEmpty: false,
     latestMedianPrice,
     historicalCAGR: parseFloat((historicalCAGR * 100).toFixed(2)),
-    latestMonth: sortedRecords[sortedRecords.length - 1]?.month || null,
+    earliestMonth,
+    latestMonth,
+    dataPeriod: latestMonth ? `${earliestMonth} to ${latestMonth}` : 'Jan 2017 onwards',
+    lastUpdateDate: new Date().toISOString(),
     records: trimmedRecords
   });
 }

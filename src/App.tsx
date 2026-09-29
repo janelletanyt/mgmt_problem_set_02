@@ -3,6 +3,7 @@ import { Header } from './components/Header';
 import { Screen1Form } from './components/Screen1Form';
 import { Screen2Framework } from './components/Screen2Framework';
 import { Screen3Valuation } from './components/Screen3Valuation';
+import { StepNavigationPromptModal } from './components/StepNavigationPromptModal';
 import { DisqusSection } from './components/DisqusSection';
 import { fetchValuationForecast } from './services/valuationApi';
 import { FlatFormData, ValuationResult } from './types';
@@ -15,15 +16,49 @@ export default function App() {
     storey: '07 TO 09',
     flatType: '4 ROOM',
     forecastYears: 5,
+    remainingLease: 45,
+    isLeaseUserSupplied: false,
+    leaseAssumptionNote: 'System assumption based on Blk 142 Toa Payoh completion (c. 1970).',
   });
   const [valuationResult, setValuationResult] = useState<ValuationResult | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [promptTargetStep, setPromptTargetStep] = useState<number | null>(null);
 
   // Screen 1 -> Screen 2 handler
   const handleFormSubmit = (data: FlatFormData) => {
     setFormData(data);
     setCurrentStep(2);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Step Tab Click Navigation (Heuristic #1: Visibility of System Status)
+  const handleSelectStep = (targetStep: number) => {
+    if (targetStep === currentStep) return;
+
+    if (currentStep === 1) {
+      // User on Screen 1 attempts to jump ahead to Screen 2 or Screen 3
+      setPromptTargetStep(targetStep);
+      return;
+    }
+
+    if (currentStep === 2) {
+      if (targetStep === 1) {
+        setCurrentStep(1);
+      } else if (targetStep === 3) {
+        if (valuationResult) {
+          setCurrentStep(3);
+        } else {
+          // If valuation not yet generated, prompt them to run it
+          setPromptTargetStep(3);
+        }
+      }
+      return;
+    }
+
+    if (currentStep === 3) {
+      if (targetStep === 1) setCurrentStep(1);
+      if (targetStep === 2) setCurrentStep(2);
+    }
   };
 
   // Screen 2 -> Screen 3 valuation generator
@@ -52,7 +87,11 @@ export default function App() {
       {/* Mobile-contained phone view container */}
       <main className="w-full sm:max-w-md bg-white min-h-screen sm:min-h-[780px] sm:rounded-3xl shadow-xl sm:border sm:border-slate-200/80 flex flex-col overflow-hidden relative">
         {/* Header & Step Tracker */}
-        <Header currentStep={currentStep} onReset={handleReset} />
+        <Header
+          currentStep={currentStep}
+          onReset={handleReset}
+          onSelectStep={handleSelectStep}
+        />
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto">
@@ -109,6 +148,7 @@ export default function App() {
                   onBackToFramework={() => setCurrentStep(2)}
                   onReset={handleReset}
                   onRetry={handleGenerateValuation}
+                  onEditInputs={() => setCurrentStep(1)}
                 />
               )}
             </>
@@ -159,6 +199,17 @@ export default function App() {
           </div>
         </footer>
       </main>
+
+      <StepNavigationPromptModal
+        isOpen={promptTargetStep !== null}
+        targetStep={promptTargetStep || 2}
+        onClose={() => setPromptTargetStep(null)}
+        onGoToScreen1={() => {
+          setPromptTargetStep(null);
+          setCurrentStep(1);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+      />
     </div>
   );
 }

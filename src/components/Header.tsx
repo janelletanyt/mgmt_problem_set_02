@@ -5,9 +5,10 @@ import { ApiHealthModal } from './ApiHealthModal';
 interface HeaderProps {
   currentStep: number;
   onReset: () => void;
+  onSelectStep?: (step: number) => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ currentStep, onReset }) => {
+export const Header: React.FC<HeaderProps> = ({ currentStep, onReset, onSelectStep }) => {
   const [showHealthModal, setShowHealthModal] = useState(false);
 
   return (
@@ -32,7 +33,7 @@ export const Header: React.FC<HeaderProps> = ({ currentStep, onReset }) => {
             <button
               id="btn-header-health"
               onClick={() => setShowHealthModal(true)}
-              className="flex items-center space-x-1 text-[11px] font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded-lg transition-colors"
+              className="flex items-center space-x-1 text-[11px] font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2 py-1.5 rounded-lg transition-colors cursor-pointer"
               title="Inspect API Health"
             >
               <Activity className="w-3.5 h-3.5 text-rose-600" />
@@ -44,7 +45,7 @@ export const Header: React.FC<HeaderProps> = ({ currentStep, onReset }) => {
               <button
                 id="btn-header-reset"
                 onClick={onReset}
-                className="flex items-center space-x-1 text-xs font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg transition-colors"
+                className="flex items-center space-x-1 text-xs font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
                 title="Start New Forecast"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
@@ -54,19 +55,50 @@ export const Header: React.FC<HeaderProps> = ({ currentStep, onReset }) => {
           </div>
         </div>
 
-        {/* Step Progress Bar */}
+        {/* Step Progress Bar & Interactive Navigation Tabs (Heuristic #1) */}
         <div className="mt-3">
-          <div className="flex justify-between text-[11px] font-medium text-slate-500 mb-1.5">
-            <span className={currentStep >= 1 ? 'text-rose-600 font-semibold' : ''}>
-              1. Flat Details
-            </span>
-            <span className={currentStep >= 2 ? 'text-rose-600 font-semibold' : ''}>
-              2. Frameworks
-            </span>
-            <span className={currentStep >= 3 ? 'text-rose-600 font-semibold' : ''}>
-              3. Valuation
-            </span>
+          <div className="grid grid-cols-3 gap-1 mb-1.5" role="tablist" aria-label="Valuation Steps">
+            {[
+              { step: 1, label: '1. Flat Details' },
+              { step: 2, label: '2. Frameworks' },
+              { step: 3, label: '3. Valuation' },
+            ].map((tab) => {
+              const isActive = currentStep === tab.step;
+              const isPast = currentStep > tab.step;
+              return (
+                <button
+                  key={tab.step}
+                  type="button"
+                  id={`tab-step-${tab.step}`}
+                  role="tab"
+                  aria-selected={isActive}
+                  onClick={() => onSelectStep?.(tab.step)}
+                  className={`text-center py-1.5 px-1 rounded-lg text-[11px] font-medium transition-all cursor-pointer flex items-center justify-center space-x-1 ${
+                    isActive
+                      ? 'bg-rose-50 text-rose-700 font-bold border border-rose-200 shadow-2xs'
+                      : isPast
+                      ? 'text-rose-600 hover:bg-slate-100'
+                      : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+                  }`}
+                  title={
+                    isActive
+                      ? `Currently on ${tab.label}`
+                      : isPast
+                      ? `Return to ${tab.label}`
+                      : `Go to ${tab.label}`
+                  }
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      isActive ? 'bg-rose-600 ring-2 ring-rose-200' : isPast ? 'bg-rose-400' : 'bg-slate-300'
+                    }`}
+                  />
+                  <span className="truncate">{tab.label}</span>
+                </button>
+              );
+            })}
           </div>
+
           <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden flex">
             <div
               className={`h-full transition-all duration-300 ${
